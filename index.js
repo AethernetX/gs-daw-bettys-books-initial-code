@@ -1,5 +1,6 @@
 // Import express and ejs
 var express = require ('express')
+var session = require ("express-session")
 var ejs = require('ejs')
 
 //Import mysql module
@@ -18,6 +19,17 @@ app.use(express.urlencoded({ extended: true }))
 
 // Set up public folder (for css and statis js)
 app.use(express.static(__dirname + '/public'))
+
+app.use(session({
+    secret: 'somerandomstuff',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        expires: 600000
+    }
+}))
+
+
 
 // Define the database connection
 const db = mysql.createConnection ({

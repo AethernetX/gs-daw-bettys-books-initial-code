@@ -1,3 +1,11 @@
+const redirectLogin = (req, res, next) => {
+    if (!req.session.userId ) {
+      res.redirect('./login') // redirect to the login page
+    } else { 
+        next (); // move to the next middleware function
+    } 
+}
+
 // Create a new router
 const express = require("express");
 const bcrypt = require("bcrypt");
@@ -56,7 +64,10 @@ router.post("/loggingIn", function (req, res, next) {
                 if(error) {
                     next(error);
                 } else if(result == true) {
+                    // Save user session here, when login is successful
+                    req.session.userId = req.body.username;
                     res.send("logging in...");
+
                 } else {
                     res.send("wrong password...");
                 }
@@ -69,6 +80,16 @@ router.post("/loggingIn", function (req, res, next) {
     )
 
 });
+
+router.get('/logout', redirectLogin, (req,res) => {
+        req.session.destroy(err => {
+        if (err) {
+          return res.redirect('/')
+        }
+        res.send('you are now logged out. <a href='+'./'+'>Home</a>');
+        })
+    })
+
 
 // Export the router object so index.js can access it
 module.exports = router
