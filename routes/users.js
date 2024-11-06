@@ -1,3 +1,5 @@
+const { check, validationResult } = require('express-validator');
+
 const redirectLogin = (req, res, next) => {
     if (!req.session.userId ) {
       res.redirect('./login') // redirect to the login page
@@ -18,31 +20,40 @@ router.get('/register', function (req, res, next) {
     res.render('register.ejs');                                                       
 })    
 
-router.post('/registered', function (req, res, next) {
+router.post('/registered',[check("email").isEmail(), check("password").isLength({min: 6})], function (req, res, next) {
     // saving data in database
+    const error = validationResult(req);
+    if(!error.isEmpty()) {
+        res.redirect("./register");
+    } else {
+        //sanatise forms
+        req.sanitize(req.body.first);
+        req.sanitize(req.body.last);
+        req.sanitize(req.body.email);
+        req.sanitize(req.body.username);
+        req.sanitize(req.body.password);
+        const plainPassword = req.body.password;
 
-    const plainPassword = req.body.password;
+        bcrypt.hash(plainPassword, saltRounds, function(err, hashedPassword) {
 
-    bcrypt.hash(plainPassword, saltRounds, function(err, hashedPassword) {
+            if(err){
+                next(err)
+            } else {
+                let sqlquery = "INSERT INTO users (firstName, lastName, email, username, password) VALUES (?,?,?,?,?)"
 
-        if(err){
-            next(err)
-        } else {
-            let sqlquery = "INSERT INTO users (firstName, lastName, email, username, password) VALUES (?,?,?,?,?)"
-
-            let newrecord = [req.body.first, req.body.last, req.body.email, req.body.username, hashedPassword]
-            db.query(sqlquery, newrecord, (error, result) => {
-                if (error) {
-                    next(error)
-                }
-                else
-                res.send(' Hello '+ req.body.first + ' '+ req.body.last +' you are now registered!  We will send an email to you at ' + req.body.email)                                                                           
-            })
-        }
+                let newrecord = [req.body.first, req.body.last, req.body.email, req.body.username, hashedPassword]
+                db.query(sqlquery, newrecord, (error, result) => {
+                    if (error) {
+                        next(error)
+                    }
+                    else
+                    res.send(' Hello '+ req.body.first + ' '+ req.body.last +' you are now registered!  We will send an email to you at ' + req.body.email)                                                                           
+                })
+            }
 
         
-    })
-
+        })
+    }
     
 
 })
@@ -53,6 +64,10 @@ router.get("/login", function (req, res, next) {
 
 //cannot be asked to make a logged in mode whatever
 router.post("/loggingIn", function (req, res, next) {
+
+    //sanatise
+    req.sanitize(req.body.username);
+    req.sanitize(req.body.password);
 
     let usernameQuery = "SELECT * FROM users WHERE username = ?";
     

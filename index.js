@@ -1,6 +1,7 @@
 // Import express and ejs
 var express = require ('express')
 var session = require ("express-session")
+const expressSanitizer = require('express-sanitizer');
 var ejs = require('ejs')
 
 //Import mysql module
@@ -19,6 +20,9 @@ app.use(express.urlencoded({ extended: true }))
 
 // Set up public folder (for css and statis js)
 app.use(express.static(__dirname + '/public'))
+
+// setup express sanitiser
+app.use(expressSanitizer());
 
 app.use(session({
     secret: 'somerandomstuff',
